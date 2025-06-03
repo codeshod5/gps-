@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Map Tracker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    #map {
+      height: 400px;
+      display: none; /* Hide map at first */
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h2>Choose Route to Track</h2>
+  <button id="1">Track Route 1</button>
+  <button id="2">Track Route 2</button>
+
+  <div id="map"></div>
+
+  <script>
+    let map;
+    let marker;
+    let socket;
+
+    async function updateLocation(lat, lng) {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const data = await res.json();
+      const address = data.display_name;
+
+      marker.setLatLng([lat, lng]);
+      marker.bindPopup(address).openPopup();
+      map.panTo([lat, lng]);
+    }
+
+    function initializeMap() {
+      // Create map and marker only once
+      map = L.map('map').setView([22.3000, 73.2065], 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+      }).addTo(map);
+
+      marker = L.marker([22.3241945811484, 73.16558182170877]).addTo(map);
+    }
+
+    document.querySelectorAll("button").forEach(button => {
+      button.addEventListener("click", () => {
+        const rid = button.id;
+        document.getElementById("map").style.display = "block"; // Show map
+
+        if (!map) {
+          initializeMap();
+        }
+
+        // Close old socket if already open
+        if (socket) {
+          socket.close();
+        }
+
+        socket = new WebSocket(`ws://127.0.0.1:8000/sendd/${rid}`);
+
+        socket.onopen = () => {
+          console.log("WebSocket connected for route", rid);
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            const lat = parseFloat(data.lat);
+            const lng = parseFloat(data.lng);
+            console.log("Received:", lat, lng);
+            updateLocation(lat, lng);
+          } catch (err) {
+            console.error("Error parsing GPS data:", err);
+          }
+        };
+
+        socket.onerror = (err) => {
+          console.error("WebSocket error:", err);
+        };
+
+        socket.onclose = () => {
+          console.log("WebSocket closed for route", rid);
+        };
+      });
+    });
+  </script>
+</body>
+</html>

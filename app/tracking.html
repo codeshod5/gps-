@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>driver app</h2>
+    <input placeholder="enter routeid" id="rid">
+    <button id="startbtn">start tracking</button>
+    <p id="status">status:not tracking</p>
+    <!-- <input placeholder="enter routeid" id="rid"> -->
+    <!-- <button id="submit">submit</button> -->
+ <script>
+    const socket = new WebSocket("ws://127.0.0.1:8000/realtime");
+
+    socket.onopen = () => {
+      console.log("WebSocket connected");
+    };
+
+    socket.onerror = (e) => {
+      console.error("WebSocket error:", e);
+    };
+
+    document.getElementById("startbtn").addEventListener('click', () => {
+      let varr = document.getElementById("rid").value
+      if ("geolocation" in navigator) {
+        navigator.geolocation.watchPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            console.log("Sending GPS:", latitude, longitude,varr);
+
+
+            //  Only send if socket is open
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify({
+                lat: latitude,
+                lng: longitude,
+                route_id:varr
+              }));
+            }
+
+            //  Update status
+            document.getElementById("status").textContent =
+              `Tracking: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+          },
+          (error) => {
+            console.error("Error getting location:", error.message);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        alert("Geolocation not supported by this browser.");
+      }
+    });
+  </script>
+<!-- 
+    //   </script> -->
+</body>
+</html>
