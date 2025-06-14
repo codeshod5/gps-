@@ -1,6 +1,6 @@
 # 📍 Real-Time GPS Tracking + ETA Prediction System
 
-A backend-heavy, real-time system that streams GPS data, predicts ETA using machine learning, and updates users via map & notifications. Powered by Kafka, Flask, WebSockets, and OpenStreetMap.
+A backend-heavy, real-time system that streams GPS data, predicts ETA using machine learning, and updates users via map & notifications. Powered by Kafka, Fastapi, WebSockets, and OpenStreetMap.
 
 ---
 
